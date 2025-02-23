@@ -1,26 +1,30 @@
 <template>
     <transition ref="tableContainer" name="slide-fade" appear>
         <div v-if="$route.name === 'DashboardHome'">
-            <h1 class="mb-3">
-                {{ $t("Quick Stats") }}
-            </h1>
-            <div>
-                <button @click="requestDowntimeStats">Get Downtime</button>
-                <!-- <button @click="openModal">Get Downtime Stats</button> -->
+            <div class="d-flex justify-content-between">
+                <h1 class="mb-3">
+                    {{ $t("Quick Stats") }}
+                </h1>
+                <div>
+                    <button @click="openModal" class="rounded-pill p-2 px-3 btn-primary border-0">
+                        <font-awesome-icon icon="download" />
+                        Get Downtime Stats
+                    </button>
+                </div>
             </div>
 
             <Modal :visible="isModalVisible" @close="isModalVisible = false" title="Downtime Stats">
                 <form @submit.prevent="requestDowntimeStats">
                     <div class="mb-3">
-                        <label for="fromDate">From:</label>
-                        <input type="datetime-local" id="fromDate" v-model="fromDate" required>
+                        <label for="fromDate" class="form-label">From:</label>
+                        <input type="datetime-local" id="fromDate" v-model="fromDate" class="form-control" required>
                     </div>
-                    <div>
+                    <div class="mb-3">
                         <label for="toDate">To:</label>
-                        <input type="datetime-local" id="toDate" v-model="toDate" required>
+                        <input type="datetime-local" id="toDate" v-model="toDate" class="form-control" required>
                     </div>
-                    <div>
-                        <button type="submit">Submit</button>
+                    <div class="d-flex flex-row-reverse">
+                        <button type="submit" class="btn btn-primary">Generate</button>
                     </div>
                 </form>
             </Modal>
@@ -32,7 +36,7 @@
                         <span class="num">{{ $root.stats.up }}</span>
                     </div>
                     <div class="col">
-                        <h3>{{ $t("Down") }}</h3>   
+                        <h3>{{ $t("Down") }}</h3>
                         <span class="num text-danger">{{ $root.stats.down }}</span>
                     </div>
                     <div class="col">
@@ -61,10 +65,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(beat, index) in displayedRecords" :key="index" :class="{ 'shadow-box': $root.windowWidth <= 550}">
+                        <tr v-for="(beat, index) in displayedRecords" :key="index"
+                            :class="{ 'shadow-box': $root.windowWidth <= 550 }">
                             <td><router-link :to="`/dashboard/${beat.monitorID}`">{{ beat.name }}</router-link></td>
-                            <td><Status :status="beat.status" /></td>
-                            <td :class="{ 'border-0':! beat.msg}"><Datetime :value="beat.time" /></td>
+                            <td>
+                                <Status :status="beat.status" />
+                            </td>
+                            <td :class="{ 'border-0': !beat.msg }">
+                                <Datetime :value="beat.time" />
+                            </td>
                             <td class="border-0">{{ beat.msg }}</td>
                         </tr>
 
@@ -77,12 +86,8 @@
                 </table>
 
                 <div class="d-flex justify-content-center kuma_pagination">
-                    <pagination
-                        v-model="page"
-                        :records="importantHeartBeatList.length"
-                        :per-page="perPage"
-                        :options="paginationConfig"
-                    />
+                    <pagination v-model="page" :records="importantHeartBeatList.length" :per-page="perPage"
+                        :options="paginationConfig" />
                 </div>
             </div>
         </div>
@@ -126,7 +131,7 @@ export default {
     },
     computed: {
 
-        importantHeartBeatList() {        
+        importantHeartBeatList() {
             let result = [];
 
             for (let monitorID in this.$root.importantHeartbeatList) {
@@ -175,10 +180,10 @@ export default {
     },
     mounted() {
         this.initialPerPage = this.perPage;
-        
+
         window.addEventListener("resize", this.updatePerPage);
         this.updatePerPage();
-        
+
     },
     beforeUnmount() {
         window.removeEventListener("resize", this.updatePerPage);
@@ -199,18 +204,17 @@ export default {
         },
         openModal() {
             this.isModalVisible = true;
+            console.log("Modal opened"); // Debugging line
         },
         requestDowntimeStats() {
             console.log("Message sent");
-            const startTime = '2025-02-18 00:00:00';
-            const endTime = '2025-02-19 00:00:00';
-            // this.$root.getSocket().emit('requestDownTimeStats', this.fromDate, this.toDate, (response) => {
-            this.$root.getSocket().emit('requestDownTimeStats', startTime, endTime, (response) => {
+            const startTime = '2025-02-22 00:00:00';
+            const endTime = '2025-02-23 00:00:00';
+            this.$root.getSocket().emit('requestDownTimeStats', this.fromDate, this.toDate, (response) => {
                 if (response.ok) {
-                    // console.log('Downtime stats received:', response.data);
                     console.log({ ...response.data.downtimeStats });
                     console.log({ ...response.data.totalDowntime });
-                    
+
                     // const XLSX = require('xlsx');
                     // const worksheet1 = XLSX.utils.json_to_sheet({ ...response.data.downtimeStats });
                     // const worksheet2 = XLSX.utils.json_to_sheet({ ...response.data.totalDowntime });
@@ -223,6 +227,7 @@ export default {
                     console.error('Error receiving downtime stats:', response.msg);
                 }
             })
+            this.isModalVisible = false;
         },
     },
 };
@@ -253,5 +258,10 @@ table {
         table-layout: fixed;
         overflow-wrap: break-word;
     }
+}
+#fromDate::-webkit-calendar-picker-indicator,
+#toDate::-webkit-calendar-picker-indicator {
+    filter: invert(76%) sepia(9%) saturate(91%) hue-rotate(176deg) brightness(95%) contrast(90%);
+    cursor: pointer;
 }
 </style>

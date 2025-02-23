@@ -1,16 +1,18 @@
 <template>
     <div class="modal-overlay" v-if="visible">
-        <div class="modal">
+        <div class="form-detail">
             <div class="modal-header">
                 <h3>{{ title }}</h3>
-                <button @click="close" class="close-button">&times;</button>
+                <button @click="close" class="close-icon">
+                    <font-awesome-icon icon="times" />
+                </button>
             </div>
             <div class="modal-body">
                 <slot></slot>
             </div>
-            <div class="modal-footer">
-                <button @click="close">Close</button>
-            </div>
+            <!-- <div class="modal-footer">
+                <button @click="close" class="close-button">Close</button>
+            </div> -->
         </div>
     </div>
 </template>
@@ -42,19 +44,21 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(2px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
-.modal {
+.form-detail {
     position: absolute;
-    top: 0;
-    background: white;
+    top: 20%;
+    background: #0d1117;
+    /* background-color: white; */
     padding: 20px;
-    border-radius: 5px;
+    border-radius: 16px;
     width: 500px;
     max-width: 100%;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -65,14 +69,24 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: #b1b8c0;
+    border-color: #b1b8c0;
     z-index: 1000;
 }
 
-.close-button {
+.close-icon {
     background: none;
     border: none;
-    font-size: 1.5em;
+    color: #b1b8c0;
+    font-size: 1.2em;
     cursor: pointer;
+}
+
+.close-button {
+    background-color: #dc3545;
+    border: 0px;
+    border-radius: 20px;
+    padding: 6px 18px;
 }
 
 .modal-body {
@@ -82,7 +96,8 @@ export default {
 
 .modal-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    border: 0px;
 }
 
 form {
