@@ -112,19 +112,12 @@ export default {
             socket = io(url);
 
             socket.on("sendDownTimeStats", (data) => {
-                console.log("Downtime Stats Recieved");
-                console.log(data);
-                
-                this.downtimeStats = [].concat(...Object.values(data.downtimeStats))
-                this.totalDowntime = [].concat(...Object.values(data.totalDowntime))
-                
-                const worksheet1 = XLSX.utils.json_to_sheet(this.downtimeStats);
-                const worksheet2 = XLSX.utils.json_to_sheet(this.totalDowntime);
+                const worksheet1 = XLSX.utils.json_to_sheet(data.downtimeStats);
+                const worksheet2 = XLSX.utils.json_to_sheet(data.totalDowntime);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet1, "Downtime Stats");
-                XLSX.utils.book_append_sheet(workbook, worksheet2, "Toatl Downtime");
+                XLSX.utils.book_append_sheet(workbook, worksheet2, "Total Downtime");
                 XLSX.writeFile(workbook, "downtime-stats.xlsx");
-                console.log("File generated");
             });
 
             socket.on("info", (info) => {

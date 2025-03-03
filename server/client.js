@@ -46,65 +46,99 @@ async function sendNotificationList(socket) {
  */
 
 async function sendDowntimeStats(socket, startTime, endTime) {
-    let heartbeats = await R.getAll(`
-        SELECT * FROM heartbeat
-        WHERE time >= datetime(?)
-        AND time <= datetime(?)
-        ORDER BY time ASC
-    `, [
-        startTime,
-        endTime
-    ]);
 
-    let downtimeStats = {};
-    let totalDowntime = {};
-
-    let isDown = {};
-    let downTime = {};
-    for (let beat of heartbeats) {
-
-            if (beat.status === 0 && !isDown[beat.monitor_id]) {
-                isDown[beat.monitor_id] = true;
-                downTime[beat.monitor_id] = beat.time;
-            }
-            if (isDown[beat.monitor_id] && beat.status === 1) {
-                isDown[beat.monitor_id] = false;
-                let upTime = beat.time;
-                let timeDifferenceSec = (new Date(upTime) - new Date(downTime[beat.monitor_id])) / 1000;
-                let hours = String(Math.floor(timeDifferenceSec / 3600)).padStart(2, '0');
-                let minutes = String(Math.floor((timeDifferenceSec % 3600) / 60)).padStart(2, '0');
-                let seconds = String(Math.floor(timeDifferenceSec % 60)).padStart(2, '0');
-                let timeDifference = `${hours}:${minutes}:${seconds}`;
-
-                if (!downtimeStats[beat.monitor_id]) {
-                    downtimeStats[beat.monitor_id] = [];
-                }
-
-                // TODO Handle downtime for always down monitors
-                downtimeStats[beat.monitor_id].push({monitor_id: beat.monitor_id, downTime: downTime[beat.monitor_id], upTime: upTime, duration: timeDifference});
-                beat.monitor_id in totalDowntime ? totalDowntime[beat.monitor_id].downTime += timeDifferenceSec : totalDowntime[beat.monitor_id] = {monitor_id: beat.monitor_id, downTime: timeDifferenceSec}
-                downTime[beat.monitor_id] = null;
-                // console.log(totalDowntime[beat.monitor_id].downTime, "timeDifferenceSec", timeDifferenceSec);
-            }
+    let downtimeStats = [];
+    let totalDowntimeStats = [];
+    
+    const formatTime = (time) => {
+        let hours = String(Math.floor(time / 3600)).padStart(2, '0');
+        let minutes = String(Math.floor((time % 3600) / 60)).padStart(2, '0');
+        let seconds = String(Math.floor(time % 60)).padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
     }
-    Object.values(totalDowntime).forEach(item => {
-        let hours = String(Math.floor(item.downTime / 3600)).padStart(2, '0');
-        let minutes = String(Math.floor((item.downTime % 3600) / 60)).padStart(2, '0');
-        let seconds = String(Math.floor(item.downTime % 60)).padStart(2, '0');
-        item.downTime = `${hours}:${minutes}:${seconds}`;
-    });
 
-    socket.emit("sendDownTimeStats", {downtimeStats, totalDowntime});
+    const monitorList = await R.getAll(`
+        SELECT id, name, url FROM monitor
+    `);
+
+    await Promise.all(monitorList.map(async (monitor) => {
+        const heartbeats = await R.getAll(`
+            SELECT * FROM heartbeat
+            WHERE monitor_id = ?
+            AND time >= datetime(?) AND time <= datetime(?)
+            ORDER BY time ASC
+            `,[
+            monitor.id,
+            startTime,
+            endTime
+        ]);
+
+        let isDown = false;
+        let downTime = null;
+        let totalDowntime = 0;
+
+        heartbeats.forEach(beat => {
+            
+            if (beat.status === 0 && !isDown) {
+                isDown = true;
+                downTime = beat.time;
+            }
+            if (isDown && beat.status === 1) {
+                isDown = false;
+                let upTime = beat.time;
+                let timeDifferenceSec = (new Date(upTime) - new Date(downTime)) / 1000;
+                let timeDifference = formatTime(timeDifferenceSec);
+                totalDowntime += timeDifferenceSec;
+                
+                downtimeStats.push({
+                    monitor_id: monitor.id,
+                    monitor_name: monitor.name,
+                    monitor_url: monitor.url,
+                    downTime: downTime,
+                    upTime: upTime,
+                    duration: timeDifference
+                });
+
+                downTime = null;
+            }
+        });
+
+        if(isDown){
+            let timeDifferenceSec = (new Date(endTime) - new Date(downTime)) / 1000;
+            let timeDifference = formatTime(timeDifferenceSec);
+            totalDowntime += timeDifferenceSec;
+            downtimeStats.push({
+                monitor_id: monitor.id,
+                monitor_name: monitor.name,
+                monitor_url: monitor.url,
+                downTime: downTime,
+                upTime: endTime,
+                duration: timeDifference
+            });
+        }
+
+
+        let timeDifference = formatTime(totalDowntime);
+        totalDowntimeStats.push({
+            monitor_id: monitor.id,
+            monitor_name: monitor.name,
+            monitor_url: monitor.url,
+            downTime: timeDifference
+        });
+    }));
+
+    socket.emit("sendDownTimeStats", {downtimeStats: downtimeStats, totalDowntime: totalDowntimeStats});
 }
 
-async function sendHeartbeatList(socket, monitorID, toUser = false, overwrite = false) {
+
+async function sendHeartbeatList(socket, monitorID, toUser = false, overwrite = false) {    
     const timeLogger = new TimeLogger();
 
     let list = await R.getAll(`
         SELECT * FROM heartbeat
         WHERE monitor_id = ?
         ORDER BY time DESC
-        LIMIT 1
+        LIMIT 100
     `, [
         monitorID,
     ]);

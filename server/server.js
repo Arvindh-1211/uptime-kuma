@@ -639,12 +639,12 @@ let needSetup = false;
         // Auth Only API
         // ***************************
 
-        socket.on("requestDownTimeStats", async (start_time, end_time) => {
+        socket.on("requestDownTimeStats", async (start_time, end_time, callback) => {
             try {
-                // checkLogin(socket);
+                checkLogin(socket);
 
-                let startTime = dayjs(start_time).utc().format("YYYY-MM-DD HH:mm:ss");
-                let endTime = dayjs(end_time).utc().format("YYYY-MM-DD HH:mm:ss");
+                let startTime = dayjs(start_time).utc(keepLocalTime = true).format("YYYY-MM-DD HH:mm:ss");
+                let endTime = dayjs(end_time).utc(keepLocalTime = true).format("YYYY-MM-DD HH:mm:ss");
 
                 await sendDowntimeStats(socket, startTime, endTime);
 

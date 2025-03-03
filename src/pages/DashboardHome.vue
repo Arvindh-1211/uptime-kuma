@@ -17,11 +17,11 @@
                 <form @submit.prevent="requestDowntimeStats">
                     <div class="mb-3">
                         <label for="fromDate" class="form-label">From:</label>
-                        <input type="datetime-local" id="fromDate" v-model="fromDate" class="form-control" required>
+                        <input type="date" id="fromDate" v-model="fromDate" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label for="toDate">To:</label>
-                        <input type="datetime-local" id="toDate" v-model="toDate" class="form-control" required>
+                        <input type="date" id="toDate" v-model="toDate" class="form-control" required>
                     </div>
                     <div class="d-flex flex-row-reverse">
                         <button type="submit" class="btn btn-primary">Generate</button>
@@ -204,25 +204,11 @@ export default {
         },
         openModal() {
             this.isModalVisible = true;
-            console.log("Modal opened"); // Debugging line
         },
         requestDowntimeStats() {
-            console.log("Message sent");
-            const startTime = '2025-02-22 00:00:00';
-            const endTime = '2025-02-23 00:00:00';
             this.$root.getSocket().emit('requestDownTimeStats', this.fromDate, this.toDate, (response) => {
                 if (response.ok) {
-                    console.log({ ...response.data.downtimeStats });
-                    console.log({ ...response.data.totalDowntime });
-
-                    // const XLSX = require('xlsx');
-                    // const worksheet1 = XLSX.utils.json_to_sheet({ ...response.data.downtimeStats });
-                    // const worksheet2 = XLSX.utils.json_to_sheet({ ...response.data.totalDowntime });
-                    // const workbook = XLSX.utils.book_new();
-                    // XLSX.utils.book_append_sheet(workbook, worksheet1, "Downtime Stats");
-                    // XLSX.utils.book_append_sheet(workbook, worksheet2, "Downtime Stats");
-                    // XLSX.writeFile(workbook, "downtime-stats.xlsx");
-                    // console.log("File generated");
+                    console.log(response.msg);
                 } else {
                     console.error('Error receiving downtime stats:', response.msg);
                 }

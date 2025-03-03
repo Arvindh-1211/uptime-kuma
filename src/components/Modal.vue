@@ -10,9 +10,6 @@
             <div class="modal-body">
                 <slot></slot>
             </div>
-            <!-- <div class="modal-footer">
-                <button @click="close" class="close-button">Close</button>
-            </div> -->
         </div>
     </div>
 </template>
@@ -56,7 +53,6 @@ export default {
     position: absolute;
     top: 20%;
     background: #0d1117;
-    /* background-color: white; */
     padding: 20px;
     border-radius: 16px;
     width: 500px;
